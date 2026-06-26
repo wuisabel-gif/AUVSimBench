@@ -1,0 +1,43 @@
+auv_sim_bench:
+  ros__parameters:
+    sim_rate_hz: 200.0
+    imu_rate_hz: 100.0
+    dvl_rate_hz: 8.0
+    depth_rate_hz: 5.0
+
+    # generic topic names (load config/barracuda.yaml for the Barracuda profile)
+    wrench_topic: cmd_wrench
+    imu_topic: imu/data
+    dvl_odom_topic: dvl/odometry
+    dvl_alt_topic: dvl/altitude
+    ping_range_topic: ping/range
+    pressure_topic: pressure
+    truth_topic: ground_truth
+    estimate_topic: ""          # set to your estimator's pose topic to show it in rviz
+
+    odom_frame: odom
+    base_frame: base_link
+    imu_frame: imu_link
+    dvl_frame: dvl_link
+    ping_frame: ping_link
+
+    wrench_timeout_sec: 0.5
+    floor_z: -10.0
+    surface_z: 0.0
+    atm_pressure: 101325.0
+
+    mass: 15.0
+    volume: 0.0                 # 0 -> neutral buoyancy (mass / water_density)
+    water_density: 1025.0
+    current: [0.0, 0.0, 0.0]    # world-frame water current (m/s)
+
+    publish_tf: true
+    publish_markers: true
+    body_size: [0.6, 0.35, 0.25]   # rviz box dimensions (m)
+
+    # failure injection (off by default)
+    dvl_noise_stddev: 0.0
+    dvl_dropout_start_sec: -1.0
+    dvl_dropout_duration_sec: 0.0
+    dvl_emit_nan: false
+    seed: 0

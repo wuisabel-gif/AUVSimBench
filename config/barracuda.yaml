@@ -1,0 +1,21 @@
+# Barracuda profile: maps the generic sim onto Barracuda's real topic + frame names.
+# Run with:  ros2 launch auv_sim_bench sim.launch.py config:=barracuda.yaml
+auv_sim_bench:
+  ros__parameters:
+    wrench_topic: /barracuda/wrench
+    imu_topic: /barracuda/vectornav/imu
+    dvl_odom_topic: /barracuda/dvl/odometry
+    dvl_alt_topic: /barracuda/dvl/altitude
+    ping_range_topic: /barracuda/ping1d/range
+    pressure_topic: /barracuda/vectornav/pressure
+    truth_topic: /auv_sim/ground_truth
+    estimate_topic: /barracuda/estimated_pose
+
+    odom_frame: odom
+    base_frame: barracuda/base_link
+    imu_frame: barracuda/imu_link
+    dvl_frame: barracuda/dvl_link
+    ping_frame: barracuda/ping1d_link
+
+    mass: 15.0
+    water_density: 1025.0

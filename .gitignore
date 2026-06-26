@@ -1,0 +1,13 @@
+# ROS 2 / colcon
+build/
+install/
+log/
+
+# python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# OS
+.DS_Store
