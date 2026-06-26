@@ -118,6 +118,25 @@ ros2 launch auv_sim_bench sim.launch.py config:=barracuda.yaml   # Barracuda pro
 # drive it by publishing geometry_msgs/Wrench on the wrench topic (default cmd_wrench)
 ```
 
+### On a Jetson (AGX Orin)
+
+Validated on a Jetson AGX Orin (JetPack 6 / ROS 2 Humble) — pure Python + numpy, so
+no GPU or Isaac needed:
+
+```bash
+mkdir -p ~/auv_ws/src
+cp -r AUVSimBench ~/auv_ws/src/auv_sim_bench
+cd ~/auv_ws && colcon build --packages-select auv_sim_bench
+source /opt/ros/humble/setup.bash
+source ~/auv_ws/install/setup.bash        # both source lines, in every new terminal
+ros2 launch auv_sim_bench sim.launch.py
+```
+
+Headless over SSH there's no display for RViz, so drop `rviz:=true` and watch the
+data instead (`ros2 topic echo /ground_truth`); driving it with a `/cmd_wrench`
+publisher moves the body as expected. For the 3D view, run RViz on a monitor
+attached to the Jetson.
+
 Test your estimator: run the sim + your estimator, then compare
 `/barracuda/estimated_pose` against `/auv_sim/ground_truth` — an accuracy check you
 cannot get from a real dive (no underwater ground truth) or from bag replay.
@@ -133,13 +152,11 @@ pytest test/
 
 ## Credits & scope
 
-The underwater-physics *idea* (buoyancy + drag in simulation) was inspired by
-Leonardo Lima's `isaac_underwater` study examples (MIT). **AUVSimBench shares none of
-that code** — the dynamics here are an independent 6-DOF Newton-Euler implementation,
-the current model is done properly rather than approximated through gravity, and the
-whole thing runs as a standalone ROS 2 node **without Isaac Sim**, so it works on
-ARM/Jetson hardware that cannot run Omniverse.
+Inspired by Leonardo Lima's [`isaac_underwater`](https://github.com/leonardomdl/isaac_underwater)
+examples (MIT), which show buoyancy and drag in Isaac Sim. AUVSimBench takes that
+idea in a different direction — its own 6-DOF dynamics in a standalone ROS 2 node, so
+it runs anywhere ROS 2 does, including a Jetson.
 
-It is a controls/estimation test rig, not a hydrodynamics research tool: drag and
+It's a controls/estimation test rig, not a hydrodynamics research tool: drag and
 inertia are simple tunable coefficients, not CFD. Added-mass and richer current
 fields are natural next steps.
