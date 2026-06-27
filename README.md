@@ -1,5 +1,11 @@
 # AUVSimBench
 
+[![PyPI version](https://img.shields.io/pypi/v/auv-sim-bench.svg)](https://pypi.org/project/auv-sim-bench/)
+[![Publish](https://github.com/wuisabel-gif/AUVSimBench/actions/workflows/python-publish.yml/badge.svg)](https://github.com/wuisabel-gif/AUVSimBench/actions/workflows/python-publish.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![ROS 2 Humble](https://img.shields.io/badge/ROS_2-Humble-22314E.svg?logo=ros&logoColor=white)](https://docs.ros.org/en/humble/)
+[![Python](https://img.shields.io/badge/Python-numpy-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+
 A lightweight **physics twin** for autonomous underwater vehicles — a 6-DOF AUV
 simulator as a single ROS 2 node, in pure Python/numpy. It runs the vehicle's
 physics and publishes the **sensor topics a state estimator consumes, plus
