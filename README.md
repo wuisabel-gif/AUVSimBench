@@ -176,7 +176,7 @@ pytest test/
 
 ## Credits & scope
 
-Inspired by Leonardo Lima's [`isaac_underwater`](https://github.com/leonardomdl/isaac_underwater)
+Inspired by Leonardo Lima's [`isaac_underwater`](https://github.com/leonlime/isaac_underwater)
 examples (MIT), which show buoyancy and drag in Isaac Sim. AUVSimBench takes that
 idea in a different direction — its own 6-DOF dynamics in a standalone ROS 2 node, so
 it runs anywhere ROS 2 does, including a Jetson.
