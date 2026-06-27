@@ -1,5 +1,6 @@
 import os
 from glob import glob
+from pathlib import Path
 
 from setuptools import setup
 
@@ -21,6 +22,8 @@ setup(
     maintainer="wuisabel-gif",
     maintainer_email="231155141+wuisabel-gif@users.noreply.github.com",
     description="Lightweight 6-DOF AUV physics sim for dry-testing state estimation.",
+    long_description=Path("README.md").read_text(encoding="utf-8"),
+    long_description_content_type="text/markdown",
     license="MIT",
     entry_points={
         "console_scripts": [
