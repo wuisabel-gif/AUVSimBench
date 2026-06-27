@@ -22,6 +22,8 @@ class AUVSimNode(Node):
         self.declare_parameter("depth_rate_hz", 5.0)
 
         # generic defaults; remap or load a profile (e.g. config/barracuda.yaml)
+        self.declare_parameter("topic_prefix", "")
+        self.declare_parameter("frame_prefix", "")
         self.declare_parameter("wrench_topic", "cmd_wrench")
         self.declare_parameter("imu_topic", "imu/data")
         self.declare_parameter("dvl_odom_topic", "dvl/odometry")
@@ -46,6 +48,16 @@ class AUVSimNode(Node):
         self.declare_parameter("volume", 0.0)
         self.declare_parameter("water_density", 1025.0)
         self.declare_parameter("current", [0.0, 0.0, 0.0])
+        self.declare_parameter("inertia", [0.5, 0.8, 0.8])
+        self.declare_parameter("cob_offset", [0.0, 0.0, 0.02])
+        self.declare_parameter("linear_drag", [20.0, 40.0, 40.0])
+        self.declare_parameter("quadratic_drag", [30.0, 80.0, 80.0])
+        self.declare_parameter("angular_drag", [2.0, 4.0, 4.0])
+        self.declare_parameter("angular_quadratic_drag", [1.0, 2.0, 2.0])
+        self.declare_parameter("initial_position", [0.0, 0.0, 0.0])
+        self.declare_parameter("initial_orientation_wxyz", [1.0, 0.0, 0.0, 0.0])
+        self.declare_parameter("initial_linear_velocity", [0.0, 0.0, 0.0])
+        self.declare_parameter("initial_angular_velocity", [0.0, 0.0, 0.0])
 
         self.declare_parameter("publish_tf", True)
         self.declare_parameter("publish_markers", True)
@@ -57,45 +69,76 @@ class AUVSimNode(Node):
         self.declare_parameter("dvl_emit_nan", False)
         self.declare_parameter("seed", 0)
 
-        g = lambda n: self.get_parameter(n).value
-        self.odom_frame = g("odom_frame")
-        self.base_frame = g("base_frame")
-        self.imu_frame = g("imu_frame")
-        self.dvl_frame = g("dvl_frame")
-        self.ping_frame = g("ping_frame")
-        self.wrench_timeout = float(g("wrench_timeout_sec"))
-        self.floor_z = float(g("floor_z"))
-        self.surface_z = float(g("surface_z"))
-        self.atm = float(g("atm_pressure"))
-        self.publish_tf = bool(g("publish_tf"))
-        self.publish_markers = bool(g("publish_markers"))
-        self.body_size = [float(x) for x in g("body_size")]
-        self.dvl_noise = float(g("dvl_noise_stddev"))
-        self.dvl_drop_start = float(g("dvl_dropout_start_sec"))
-        self.dvl_drop_dur = float(g("dvl_dropout_duration_sec"))
-        self.dvl_nan = bool(g("dvl_emit_nan"))
-        self.rng = random.Random(int(g("seed")))
+        def param_value(name):
+            return self.get_parameter(name).value
+
+        def vec_param(name, size=3):
+            value = [float(x) for x in param_value(name)]
+            if len(value) != size:
+                raise ValueError(f"{name} must contain {size} values")
+            return value
+
+        def normalize_prefix(prefix):
+            prefix = str(prefix).strip().strip("/")
+            return f"/{prefix}" if prefix else ""
+
+        topic_prefix = normalize_prefix(param_value("topic_prefix"))
+        frame_prefix = str(param_value("frame_prefix")).strip().strip("/")
+
+        def expand_name(value):
+            return str(value).format(
+                topic_prefix=topic_prefix,
+                frame_prefix=frame_prefix,
+            )
+
+        self.odom_frame = expand_name(param_value("odom_frame"))
+        self.base_frame = expand_name(param_value("base_frame"))
+        self.imu_frame = expand_name(param_value("imu_frame"))
+        self.dvl_frame = expand_name(param_value("dvl_frame"))
+        self.ping_frame = expand_name(param_value("ping_frame"))
+        self.wrench_timeout = float(param_value("wrench_timeout_sec"))
+        self.floor_z = float(param_value("floor_z"))
+        self.surface_z = float(param_value("surface_z"))
+        self.atm = float(param_value("atm_pressure"))
+        self.publish_tf = bool(param_value("publish_tf"))
+        self.publish_markers = bool(param_value("publish_markers"))
+        self.body_size = [float(x) for x in param_value("body_size")]
+        self.dvl_noise = float(param_value("dvl_noise_stddev"))
+        self.dvl_drop_start = float(param_value("dvl_dropout_start_sec"))
+        self.dvl_drop_dur = float(param_value("dvl_dropout_duration_sec"))
+        self.dvl_nan = bool(param_value("dvl_emit_nan"))
+        self.rng = random.Random(int(param_value("seed")))
 
         params = AUVParams()
-        params.mass = float(g("mass"))
-        params.water_density = float(g("water_density"))
-        vol = float(g("volume"))
+        params.mass = float(param_value("mass"))
+        params.water_density = float(param_value("water_density"))
+        vol = float(param_value("volume"))
         params.volume = vol if vol > 0.0 else params.mass / params.water_density
-        params.current_world = np.array([float(c) for c in g("current")])
+        params.current_world = np.array(vec_param("current"))
+        params.inertia = np.array(vec_param("inertia"))
+        params.cob_offset = np.array(vec_param("cob_offset"))
+        params.lin_drag = np.array(vec_param("linear_drag"))
+        params.quad_drag = np.array(vec_param("quadratic_drag"))
+        params.ang_drag = np.array(vec_param("angular_drag"))
+        params.ang_quad_drag = np.array(vec_param("angular_quadratic_drag"))
         self.sim = AUVDynamics(params)
+        self.sim.s.p = np.array(vec_param("initial_position"))
+        self.sim.s.q = np.array(vec_param("initial_orientation_wxyz", 4))
+        self.sim.s.v = np.array(vec_param("initial_linear_velocity"))
+        self.sim.s.w = np.array(vec_param("initial_angular_velocity"))
 
         self.force = np.zeros(3)
         self.torque = np.zeros(3)
         self.last_wrench_t = self.now()
         self.estimate = None
 
-        self.create_subscription(Wrench, g("wrench_topic"), self.on_wrench, 10)
-        self.imu_pub = self.create_publisher(Imu, g("imu_topic"), 10)
-        self.dvl_pub = self.create_publisher(Odometry, g("dvl_odom_topic"), 10)
-        self.alt_pub = self.create_publisher(Range, g("dvl_alt_topic"), 10)
-        self.ping_pub = self.create_publisher(Range, g("ping_range_topic"), 10)
-        self.press_pub = self.create_publisher(FluidPressure, g("pressure_topic"), 10)
-        self.truth_pub = self.create_publisher(PoseStamped, g("truth_topic"), 10)
+        self.create_subscription(Wrench, expand_name(param_value("wrench_topic")), self.on_wrench, 10)
+        self.imu_pub = self.create_publisher(Imu, expand_name(param_value("imu_topic")), 10)
+        self.dvl_pub = self.create_publisher(Odometry, expand_name(param_value("dvl_odom_topic")), 10)
+        self.alt_pub = self.create_publisher(Range, expand_name(param_value("dvl_alt_topic")), 10)
+        self.ping_pub = self.create_publisher(Range, expand_name(param_value("ping_range_topic")), 10)
+        self.press_pub = self.create_publisher(FluidPressure, expand_name(param_value("pressure_topic")), 10)
+        self.truth_pub = self.create_publisher(PoseStamped, expand_name(param_value("truth_topic")), 10)
 
         if self.publish_tf:
             self.tf_bc = TransformBroadcaster(self)
@@ -103,21 +146,21 @@ class AUVSimNode(Node):
             self._publish_static_frames()
         if self.publish_markers:
             self.marker_pub = self.create_publisher(Marker, "auv_sim/markers", 10)
-        est = g("estimate_topic")
+        est = expand_name(param_value("estimate_topic"))
         if est:
             self.create_subscription(PoseStamped, est, self.on_estimate, 10)
 
-        self.sim_dt = 1.0 / float(g("sim_rate_hz"))
+        self.sim_dt = 1.0 / float(param_value("sim_rate_hz"))
         self.acc = {"imu": 0.0, "dvl": 0.0, "depth": 0.0}
         self.rates = {
-            "imu": 1.0 / float(g("imu_rate_hz")),
-            "dvl": 1.0 / float(g("dvl_rate_hz")),
-            "depth": 1.0 / float(g("depth_rate_hz")),
+            "imu": 1.0 / float(param_value("imu_rate_hz")),
+            "dvl": 1.0 / float(param_value("dvl_rate_hz")),
+            "depth": 1.0 / float(param_value("depth_rate_hz")),
         }
         self.elapsed = 0.0
         self.create_timer(self.sim_dt, self.step)
         self.get_logger().info(
-            f"AUV sim bench @ {g('sim_rate_hz')} Hz, neutral V={params.volume:.4f} m^3; "
+            f"AUV sim bench @ {param_value('sim_rate_hz')} Hz, neutral V={params.volume:.4f} m^3; "
             f"rviz fixed frame = {self.odom_frame}"
         )
 
@@ -176,8 +219,10 @@ class AUVSimNode(Node):
         if self.dvl_nan:
             vx = vy = vz = float("nan")
         else:
-            n = lambda: self.rng.gauss(0.0, self.dvl_noise) if self.dvl_noise > 0 else 0.0
-            vx, vy, vz = s.v[0] + n(), s.v[1] + n(), s.v[2] + n()
+            def noise():
+                return self.rng.gauss(0.0, self.dvl_noise) if self.dvl_noise > 0 else 0.0
+
+            vx, vy, vz = s.v[0] + noise(), s.v[1] + noise(), s.v[2] + noise()
         msg.twist.twist.linear.x = vx
         msg.twist.twist.linear.y = vy
         msg.twist.twist.linear.z = vz

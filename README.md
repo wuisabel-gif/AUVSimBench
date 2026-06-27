@@ -78,6 +78,30 @@ Adapt it to a specific vehicle with a **profile** — a small YAML that remaps t
 topics/frames and sets the mass/buoyancy. `config/barracuda.yaml` is one example
 (Barracuda's real `/barracuda/...` topics); write your own for any other AUV.
 
+Profiles can also avoid hardcoded robot names by using placeholders in topic and
+frame strings:
+
+| placeholder | expands to |
+|-------------|------------|
+| `{topic_prefix}` | the normalized `topic_prefix` parameter, such as `/barracuda` |
+| `{frame_prefix}` | the normalized `frame_prefix` parameter, such as `barracuda` |
+
+For example, `wrench_topic: "{topic_prefix}/wrench"` becomes
+`/barracuda/wrench` when `topic_prefix: /barracuda`. Leave both prefixes empty
+for generic relative names.
+
+Profiles can also tune the vehicle dynamics and scenario start state:
+
+| parameter | meaning |
+|-----------|---------|
+| `inertia` | diagonal body inertia `[Ixx, Iyy, Izz]` |
+| `cob_offset` | center of buoyancy relative to center of mass, body frame |
+| `linear_drag`, `quadratic_drag` | per-axis translational drag coefficients |
+| `angular_drag`, `angular_quadratic_drag` | per-axis rotational drag coefficients |
+| `initial_position` | starting world position |
+| `initial_orientation_wxyz` | starting orientation quaternion |
+| `initial_linear_velocity`, `initial_angular_velocity` | starting body velocities |
+
 ## See it in 3D
 
 There's no built-in render, but it broadcasts **TF** and a **vehicle marker**, so it

@@ -6,6 +6,8 @@ auv_sim_bench:
     depth_rate_hz: 5.0
 
     # generic topic names (load config/barracuda.yaml for the Barracuda profile)
+    topic_prefix: ""
+    frame_prefix: ""
     wrench_topic: cmd_wrench
     imu_topic: imu/data
     dvl_odom_topic: dvl/odometry
@@ -30,6 +32,17 @@ auv_sim_bench:
     volume: 0.0                 # 0 -> neutral buoyancy (mass / water_density)
     water_density: 1025.0
     current: [0.0, 0.0, 0.0]    # world-frame water current (m/s)
+    inertia: [0.5, 0.8, 0.8]    # diagonal Ixx,Iyy,Izz (kg*m^2)
+    cob_offset: [0.0, 0.0, 0.02] # center of buoyancy relative to COM, body frame (m)
+    linear_drag: [20.0, 40.0, 40.0]
+    quadratic_drag: [30.0, 80.0, 80.0]
+    angular_drag: [2.0, 4.0, 4.0]
+    angular_quadratic_drag: [1.0, 2.0, 2.0]
+
+    initial_position: [0.0, 0.0, 0.0]
+    initial_orientation_wxyz: [1.0, 0.0, 0.0, 0.0]
+    initial_linear_velocity: [0.0, 0.0, 0.0]
+    initial_angular_velocity: [0.0, 0.0, 0.0]
 
     publish_tf: true
     publish_markers: true
