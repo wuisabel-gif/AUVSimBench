@@ -24,7 +24,7 @@ setup(
     description="Lightweight 6-DOF AUV physics sim for dry-testing state estimation.",
     long_description=Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
-    license="MIT",
+    license="Apache-2.0",
     entry_points={
         "console_scripts": [
             "sim = auv_sim_bench.sim_node:main",
